@@ -87,11 +87,12 @@
 
     function renderRoute(route) {
       console.log('Rendering route with', route.steps?.length, 'steps');
+      document.getElementById('loading').style.display = 'none';
+      
       try {
-        document.getElementById('loading').style.display = 'none';
-        
         if (!route.steps || route.steps.length === 0) {
           document.getElementById('loading').textContent = 'No steps in route';
+          document.getElementById('loading').style.display = 'block';
           return;
         }
 

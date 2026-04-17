@@ -122,39 +122,43 @@
           // Draw polyline from shape (if available) or just from→to
           if (step.shape && step.shape.length > 1) {
             const latlngs = step.shape.map(([lat, lon]) => [lat, lon]);
-            L.polyline(latlngs, {
+            const line = L.polyline(latlngs, {
               color: color,
               weight: isBus ? 3 : 5,
               opacity: 0.7,
               dashArray: isBus ? '5, 8' : null,
-            }).addTo(map);
+            });
+            line.addTo(map);
             latlngs.forEach(p => bounds.extend(p));
           } else if (step.from_lat && step.to_lat) {
             // Fallback: straight line
-            L.polyline([[step.from_lat, step.from_lon], [step.to_lat, step.to_lon]], {
+            const line = L.polyline([[step.from_lat, step.from_lon], [step.to_lat, step.to_lon]], {
               color: color,
               weight: isBus ? 3 : 5,
               opacity: 0.7,
               dashArray: isBus ? '5, 8' : null,
-            }).addTo(map);
+            });
+            line.addTo(map);
             bounds.extend([step.from_lat, step.from_lon]);
             bounds.extend([step.to_lat, step.to_lon]);
           }
 
           // Origin marker (green) and destination marker (red)
           if (step.from_lat && step.from_lon) {
-            L.circleMarker([step.from_lat, step.from_lon], {
+            const marker = L.circleMarker([step.from_lat, step.from_lon], {
               radius: 6, color: '#4caf50', fillOpacity: 0.9, fillColor: '#4caf50'
-            }).addTo(map);
+            });
+            marker.addTo(map);
           }
           if (step.to_lat && step.to_lon) {
-            L.circleMarker([step.to_lat, step.to_lon], {
+            const marker = L.circleMarker([step.to_lat, step.to_lon], {
               radius: 6, color: '#f44336', fillOpacity: 0.9, fillColor: '#f44336'
-            }).addTo(map);
+            });
+            marker.addTo(map);
           }
         }
         } catch(e) {
-          console.log('Step rendering error:', e);
+          console.log('Step rendering error:', e.message);
         }
       });
 

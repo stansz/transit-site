@@ -75,7 +75,11 @@
 
         // Use first route
         const route = data.routes[0];
-        renderRoute(route);
+        try {
+          renderRoute(route);
+        } catch (e) {
+          console.log('renderRoute error:', e);
+        }
       } catch (e) {
         document.getElementById('loading').textContent = 'Failed: ' + e.message;
       }

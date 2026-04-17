@@ -100,7 +100,7 @@
           if (step.from_lat && step.from_lon) {
             L.circleMarker([step.from_lat, step.from_lon], {
               radius: 6, color: '#44aacc', fillOpacity: 0.8, fillColor: '#44aacc'
-            }).addTo(map).bindPopup(`Transfer: walk ${step.walk_min} min to ${step.to_stop}`);
+            }).addTo(map);  // removed bindPopup
             bounds.extend([step.from_lat, step.from_lon]);
           }
         } else if (step.type === 'skytrain' || step.type === 'bus') {
@@ -133,12 +133,12 @@
           if (step.from_lat && step.from_lon) {
             L.circleMarker([step.from_lat, step.from_lon], {
               radius: 6, color: '#4caf50', fillOpacity: 0.9, fillColor: '#4caf50'
-            }).addTo(map).bindPopup(`${step.from_stop} (${step.from_time})`);
+            }).addTo(map);  // removed bindPopup to avoid potential error
           }
           if (step.to_lat && step.to_lon) {
             L.circleMarker([step.to_lat, step.to_lon], {
               radius: 6, color: '#f44336', fillOpacity: 0.9, fillColor: '#f44336'
-            }).addTo(map).bindPopup(`${step.to_stop} (${step.to_time})`);
+            }).addTo(map);  // removed bindPopup
           }
         }
       });

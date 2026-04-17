@@ -143,8 +143,13 @@
         }
       });
 
-      if (bounds && bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+      // Fit bounds if we have them
+      try {
+        if (bounds && bounds.isValid()) {
+          map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+        }
+      } catch (e) {
+        console.log('fitBounds error:', e);
       }
     }
 

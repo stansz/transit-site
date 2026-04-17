@@ -234,6 +234,9 @@
     </div>
 
     <div class="results" id="results"></div>
+    <div class="map-link" id="mapLink" style="display:none; margin-top:1rem; text-align:center;">
+      <button class="search-btn" onclick="openMap()">View Route on Map 🗺️</button>
+    </div>
     <div class="hint">Powered by TransLink GTFS data · Schedules may vary</div>
   </div>
 
@@ -380,6 +383,15 @@
       if (side === 'from') document.getElementById('toInput').focus();
     }
 
+    function openMap() {
+      const from = encodeURIComponent(document.getElementById('fromInput').value.trim());
+      const to = encodeURIComponent(document.getElementById('toInput').value.trim());
+      const depart = document.getElementById('departTime').value;
+      let url = `transit-map.html?from=${from}&to=${to}`;
+      if (depart) url += `&depart=${encodeURIComponent(depart)}`;
+      window.open(url, '_blank');
+    }
+
     // Enter key — if suggestion dropdown open, pick selection; otherwise search
     document.getElementById('fromInput').addEventListener('keydown', e => {
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -421,6 +433,7 @@
       const depart = document.getElementById('departTime').value;
       hideSuggest('fromSuggest');
       hideSuggest('toSuggest');
+      document.getElementById('mapLink').style.display = 'none';
 
       if (!from || !to) return;
 
@@ -448,6 +461,8 @@
         }
 
         results.innerHTML = data.routes.map((route, i) => renderRoute(route, i)).join('');
+        // Show map link
+        document.getElementById('mapLink').style.display = 'block';
       } catch (e) {
         results.innerHTML = `<div class="error">Failed to fetch routes. Try again.</div>`;
         console.error(e);

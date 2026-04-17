@@ -86,54 +86,50 @@
     }
 
     function renderRoute(route) {
-      console.log('Rendering route with', route.steps?.length, 'steps');
       document.getElementById('loading').style.display = 'none';
+      console.log('renderRoute called');
       
-      try {
-        if (!route.steps || route.steps.length === 0) {
-          document.getElementById('loading').textContent = 'No steps in route';
-          document.getElementById('loading').style.display = 'block';
-          return;
-        }
+      if (!route.steps || route.steps.length === 0) {
+        document.getElementById('loading').textContent = 'No steps';
+        return;
+      }
 
-        const map = L.map('map').setView([49.25, -122.9], 11);
+      const map = L.map('map');
+      map.setView([49.25, -122.9], 11);
 
-      // Light basemap (CartoDB Voyager) — minimal, transit-friendly
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap &copy; CARTO',
+        attribution: '&copy; OpenStreetMap',
         maxZoom: 19,
       }).addTo(map);
 
       const bounds = L.latLngBounds();
 
-      // Just add bounds without any drawing
-      route.steps.forEach(step => {
+      // Simple test: just draw one line from first step
+      const step = route.steps[0];
+      if (step.shape && step.shape.length > 0) {
         try {
-          if (step.from_lat && step.from_lon) {
-            bounds.extend([step.from_lat, step.from_lon]);
-          }
-          if (step.to_lat && step.to_lon) {
-            bounds.extend([step.to_lat, step.to_lon]);
-          }
-        } catch(e) {}
-      });
-
-      console.log('Bounds:', bounds);
-      
-      // Fit bounds if we have them
-      try {
-        if (bounds && bounds.isValid()) {
-          map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+          const latlngs = step.shape.map(p => [p[0], p[1]]);
+          console.log('Drawing polyline with', latlngs.length, 'points');
+          L.polyline(latlngs, { color: 'blue', weight: 5 }).addTo(map);
+          latlngs.forEach(p => bounds.extend(p));
+          console.log('Polyline added');
+        } catch(err) {
+          console.log('Polyline error:', err.message);
         }
-      } catch (e) {
-        console.log('fitBounds error:', e);
+      }
+
+      if (step.from_lat && step.from_lon) bounds.extend([step.from_lat, step.from_lon]);
+      if (step.to_lat && step.to_lon) bounds.extend([step.to_lat, step.to_lon]);
+
+      try {
+        if (bounds.isValid()) {
+          map.fitBounds(bounds, { padding: [20, 20] });
+        }
+      } catch(e) {
+        console.log('fitBounds error:', e.message);
       }
       
-      console.log('Render complete!');
-      } catch (e) {
-        console.log('renderRoute internal error:', e);
-        document.getElementById('loading').textContent = 'Render error: ' + e.message;
-      }
+      console.log('Done');
     }
 
     // Run

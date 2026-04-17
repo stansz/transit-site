@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transit — ogsapps</title>
+  <link rel="icon" type="image/jpeg" href="https://ogsapps.cc/logo.jpg">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #12131a;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      display: flex; align-items: center; gap: 0.8rem;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #1e2030;
+      position: sticky; top: 0; background: #12131aee; z-index: 10;
+      backdrop-filter: blur(10px);
+    }
+    .header a { text-decoration: none; color: #5a6; font-size: 1.2rem; transition: color 0.2s; }
+    .header a:hover { color: #8c9; }
+    .header h1 { font-size: 1rem; font-weight: 500; color: #b0b8c8; letter-spacing: 0.08em; }
+
+    /* Main */
+    .main { max-width: 680px; margin: 0 auto; padding: 1.5rem; }
+
+    /* Quick buttons */
+    .quick-routes {
+      display: flex; flex-wrap: wrap; gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .quick-btn {
+      background: #1a1d2e; border: 1px solid #2a2d40; border-radius: 20px;
+      padding: 0.4rem 1rem; color: #8890a8; font-size: 0.78rem;
+      cursor: pointer; transition: all 0.2s; font-family: inherit;
+    }
+    .quick-btn:hover { border-color: #4a5070; color: #c0c8e0; background: #1e2238; }
+
+    /* Search */
+    .search-box {
+      background: #1a1d2e; border: 1px solid #2a2d40; border-radius: 16px;
+      padding: 1.2rem; margin-bottom: 1.5rem;
+    }
+    .search-row {
+      display: flex; align-items: center; gap: 0.8rem;
+      margin-bottom: 0.8rem;
+    }
+    .search-row:last-child { margin-bottom: 0; }
+    .search-label {
+      font-size: 0.75rem; color: #5a6080; width: 20px; text-align: center; font-weight: 600;
+    }
+    .search-input {
+      flex: 1; background: #10121a; border: 1px solid #2a2d40; border-radius: 10px;
+      padding: 0.75rem 1rem; color: #e8eaf0; font-size: 0.9rem; font-family: inherit;
+      outline: none; transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: #4a6fa5; box-shadow: 0 0 0 2px #4a6fa522; }
+    .search-input::placeholder { color: #3a3d55; }
+    .search-btn {
+      background: linear-gradient(135deg, #2a4a7a, #1a3050); border: 1px solid #3a5a8a; border-radius: 10px;
+      padding: 0.7rem 1.5rem; color: #c0d0f0; font-size: 0.85rem;
+      cursor: pointer; font-family: inherit; transition: all 0.2s; font-weight: 500;
+    }
+    .search-btn:hover { background: linear-gradient(135deg, #3a5a8a, #2a4060); }
+    .search-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* Time input */
+    .time-row {
+      display: flex; align-items: center; gap: 0.8rem; margin-top: 0.8rem;
+    }
+    .time-input {
+      background: #10121a; border: 1px solid #2a2d40; border-radius: 10px;
+      padding: 0.55rem 0.8rem; color: #e8eaf0; font-size: 0.8rem; font-family: inherit;
+      outline: none; width: 110px;
+    }
+    .time-input:focus { border-color: #4a6fa5; }
+    .time-label { font-size: 0.7rem; color: #5a6080; }
+
+    /* Location button */
+    .loc-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 1.1rem; padding: 0.2rem; opacity: 0.5;
+      transition: opacity 0.2s;
+    }
+    .loc-btn:hover { opacity: 0.9; }
+
+    /* Results */
+    .results { margin-top: 0.5rem; }
+    .route-card {
+      background: #1a1d2e; border: 1px solid #2a2d40; border-radius: 14px;
+      padding: 1.2rem; margin-bottom: 1rem;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; } }
+
+    .route-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1rem; padding-bottom: 0.8rem;
+      border-bottom: 1px solid #2a2d40;
+    }
+    .route-duration { font-size: 1.6rem; font-weight: 300; color: #f0f0f0; }
+    .route-duration span { font-size: 0.85rem; color: #6a7090; }
+    .route-badge {
+      font-size: 0.72rem; padding: 0.25rem 0.6rem; border-radius: 12px;
+      background: #1e2840; border: 1px solid #2a3a5a; color: #7a8ab0;
+    }
+
+    .step {
+      position: relative;
+      padding-left: 2.2rem;
+      margin-bottom: 0.9rem;
+    }
+    .step-icon {
+      position: absolute; left: 0; top: 0;
+      font-size: 1rem;
+    }
+    .step-line {
+      position: absolute; left: 8px; top: 1.6rem; bottom: -0.5rem;
+      width: 2px; background: #2a2d40; border-radius: 1px;
+    }
+    .step:last-child .step-line { display: none; }
+    .step-route { font-size: 0.88rem; color: #c8d0e0; font-weight: 600; }
+    .step-detail { font-size: 0.8rem; color: #7a80a0; margin-top: 0.15rem; }
+    .step-time { color: #5a6080; font-size: 0.72rem; margin-top: 0.1rem; }
+    .step-transfer {
+      padding-left: 2.2rem; margin-bottom: 0.9rem;
+      font-size: 0.78rem; color: #6a7090;
+    }
+    .step-transfer .step-icon { font-size: 0.9rem; }
+
+    .arrive {
+      margin-top: 0.5rem; padding-top: 0.8rem;
+      border-top: 1px solid #2a2d40;
+      font-size: 0.88rem; color: #80c090;
+    }
+
+    /* Error / empty */
+    .error {
+      background: #1a1d2e; border: 1px solid #2a2d40; border-radius: 14px;
+      padding: 1.5rem; text-align: center; color: #6a7090; font-size: 0.85rem;
+    }
+    .hint {
+      text-align: center; color: #2a2d40; font-size: 0.72rem;
+      margin-top: 2rem;
+    }
+
+    /* SkyTrain line colors */
+    .line-expo { color: #5588dd; }
+    .line-millennium { color: #eebb44; }
+    .line-canada { color: #44aacc; }
+    .line-seabus { color: #aa8877; }
+
+    @media (max-width: 600px) {
+      .main { padding: 1rem; }
+      .search-input { font-size: 0.85rem; padding: 0.6rem 0.8rem; }
+      .route-duration { font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <a href="https://ogsapps.cc">←</a>
+    <h1>🚆 TRANSIT</h1>
+  </div>
+
+  <div class="main">
+    <div class="quick-routes" id="quickRoutes">
+      <button class="quick-btn" data-from="Surrey Central" data-to="Waterfront">Surrey → Downtown</button>
+      <button class="quick-btn" data-from="Gateway Station" data-to="YVR Airport">→ YVR Airport</button>
+      <button class="quick-btn" data-from="Metrotown" data-to="Commercial-Broadway">Metrotown → Commercial</button>
+      <button class="quick-btn" data-from="Brentwood" data-to="Waterfront">Brentwood → Downtown</button>
+    </div>
+
+    <div class="search-box">
+      <div class="search-row">
+        <span class="search-label">A</span>
+        <input type="text" class="search-input" id="fromInput" placeholder="From (e.g. Gateway Station)" autocomplete="off">
+        <button class="loc-btn" id="locBtnFrom" title="Use my location">📍</button>
+      </div>
+      <div class="search-row">
+        <span class="search-label">B</span>
+        <input type="text" class="search-input" id="toInput" placeholder="To (e.g. YVR Airport)" autocomplete="off">
+        <button class="loc-btn" id="locBtnTo" title="Use my location">📍</button>
+      </div>
+      <div class="time-row">
+        <span class="time-label">Depart</span>
+        <input type="time" class="time-input" id="departTime">
+        <button class="search-btn" id="searchBtn" onclick="search()">Find Routes</button>
+      </div>
+    </div>
+
+    <div class="results" id="results"></div>
+    <div class="hint">Powered by TransLink GTFS data · Schedules may vary</div>
+  </div>
+
+  <script>
+    const API = 'https://maps.ogsapps.cc/api/transit/route';
+
+    const LINE_COLORS = {
+      'Expo Line': 'line-expo',
+      'Millennium Line': 'line-millennium',
+      'Canada Line': 'line-canada',
+      'SeaBus': 'line-seabus',
+    };
+
+    // Quick route buttons
+    document.querySelectorAll('.quick-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('fromInput').value = btn.dataset.from;
+        document.getElementById('toInput').value = btn.dataset.to;
+        search();
+      });
+    });
+
+    // Location buttons
+    document.getElementById('locBtnFrom').addEventListener('click', () => useLocation('fromInput'));
+    document.getElementById('locBtnTo').addEventListener('click', () => useLocation('toInput'));
+
+    function useLocation(inputId) {
+      if (!navigator.geolocation) return;
+      const btn = inputId === 'fromInput' ? 'locBtnFrom' : 'locBtnTo';
+      document.getElementById(btn).style.opacity = '0.2';
+      navigator.geolocation.getCurrentPosition(pos => {
+        document.getElementById(inputId).value =
+          pos.coords.latitude.toFixed(4) + ',' + pos.coords.longitude.toFixed(4);
+        document.getElementById(btn).style.opacity = '0.8';
+      }, () => {
+        document.getElementById(btn).style.opacity = '0.4';
+      }, { timeout: 5000 });
+    }
+
+    // Enter key
+    document.getElementById('fromInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('toInput').focus();
+    });
+    document.getElementById('toInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') search();
+    });
+
+    async function search() {
+      const from = document.getElementById('fromInput').value.trim();
+      const to = document.getElementById('toInput').value.trim();
+      const depart = document.getElementById('departTime').value;
+
+      if (!from || !to) return;
+
+      const results = document.getElementById('results');
+      results.innerHTML = '<div class="error">Finding routes...</div>';
+
+      const btn = document.getElementById('searchBtn');
+      btn.disabled = true;
+
+      try {
+        let url = `${API}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+        if (depart) url += `&depart=${encodeURIComponent(depart)}`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.error) {
+          results.innerHTML = `<div class="error">${esc(data.error)}</div>`;
+          return;
+        }
+
+        if (!data.routes || data.routes.length === 0) {
+          results.innerHTML = '<div class="error">No routes found. Try different stop names.</div>';
+          return;
+        }
+
+        results.innerHTML = data.routes.map((route, i) => renderRoute(route, i)).join('');
+      } catch (e) {
+        results.innerHTML = `<div class="error">Failed to fetch routes. Try again.</div>`;
+        console.error(e);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function renderRoute(route, index) {
+      const stepsHtml = route.steps.map(step => {
+        if (step.type === 'transfer') {
+          return `<div class="step-transfer">
+            <span class="step-icon">🔄</span>
+            Walk ${step.walk_min} min to ${esc(step.to_stop)}
+          </div>`;
+        }
+
+        const icon = step.type === 'skytrain' ? '🚆' : '🚌';
+        const lineClass = LINE_COLORS[step.route] || '';
+        const stops = step.stops_count > 1 ? `${step.stops_count} stops` : '1 stop';
+
+        return `<div class="step">
+          <span class="step-icon">${icon}</span>
+          <div class="step-line"></div>
+          <div class="step-route ${lineClass}">${esc(step.route)}</div>
+          <div class="step-detail">${esc(step.from.stop)} → ${esc(step.to.stop)}</div>
+          <div class="step-time">${step.from.time} → ${step.to.time} · ${stops}</div>
+        </div>`;
+      }).join('');
+
+      const badge = route.transfers === 0 ? 'Direct' : route.transfers + ' transfer' + (route.transfers > 1 ? 's' : '');
+
+      return `<div class="route-card">
+        <div class="route-header">
+          <div class="route-duration">${route.duration_min} <span>min</span></div>
+          <div class="route-badge">${badge}</div>
+        </div>
+        ${stepsHtml}
+        <div class="arrive">✅ Arrive ${route.arrival}</div>
+      </div>`;
+    }
+
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+  </script>
+</body>
+</html>

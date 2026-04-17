@@ -320,6 +320,12 @@
       d.textContent = s;
       return d.innerHTML;
     }
+
+    // Auto-fill from URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('from')) document.getElementById('fromInput').value = urlParams.get('from');
+    if (urlParams.get('to')) document.getElementById('toInput').value = urlParams.get('to');
+    if (urlParams.get('from') && urlParams.get('to')) search();
   </script>
 </body>
 </html>

@@ -446,9 +446,12 @@
       try {
         let url = `${API}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
         if (depart) url += `&depart=${encodeURIComponent(depart)}`;
+        console.log('Fetching:', url);
 
         const res = await fetch(url);
+        console.log('Response status:', res.status);
         const data = await res.json();
+        console.log('Data routes:', data.routes?.length);
 
         if (data.error) {
           results.innerHTML = `<div class="error">${esc(data.error)}</div>`;
@@ -464,7 +467,7 @@
         // Show map link
         document.getElementById('mapLink').style.display = 'block';
       } catch (e) {
-        results.innerHTML = `<div class="error">Failed to fetch routes. Try again.</div>`;
+        results.innerHTML = `<div class="error">Failed: ${e.message || e}</div>`;
         console.error(e);
       } finally {
         btn.disabled = false;

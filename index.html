@@ -301,7 +301,7 @@
 
     async function fetchSuggestions(side, q) {
       try {
-        const res = await fetch(`/api/transit/stations?q=${encodeURIComponent(q)}`);
+        const res = await fetch(`https://maps.ogsapps.cc/api/transit/stations?q=${encodeURIComponent(q)}`);
         const data = await res.json();
         if (!Array.isArray(data)) return;
         if (side === 'from') {

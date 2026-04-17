@@ -76,7 +76,14 @@
     }
 
     function renderRoute(route) {
+      console.log('Rendering route with', route.steps?.length, 'steps');
       document.getElementById('loading').style.display = 'none';
+      
+      if (!route.steps || route.steps.length === 0) {
+        document.getElementById('loading').textContent = 'No steps in route';
+        return;
+      }
+
       const map = L.map('map').setView([49.25, -122.9], 11);
 
       // Light basemap (CartoDB Voyager) — minimal, transit-friendly
@@ -136,7 +143,7 @@
         }
       });
 
-      if (bounds.isValid()) {
+      if (bounds && bounds.isValid()) {
         map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
       }
     }

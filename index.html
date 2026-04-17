@@ -69,6 +69,39 @@
     .search-btn:hover { background: linear-gradient(135deg, #3a5a8a, #2a4060); }
     .search-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
+    /* Suggest dropdown */
+    .suggest {
+      position: absolute; left: 0; right: 0;
+      background: #1a1d2e; border: 1px solid #3a3d55; border-top: none;
+      border-radius: 0 0 12px 12px; max-height: 240px; overflow-y: auto;
+      z-index: 50; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      display: none;
+    }
+    .suggest-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.6rem 1rem; cursor: pointer; font-size: 0.88rem;
+      border-bottom: 1px solid #2a2d40;
+    }
+    .suggest-item:last-child { border-bottom: none; }
+    .suggest-item:hover, .suggest-item.selected { background: #252845; }
+    .suggest-name { color: #e8eaf0; }
+    .suggest-lines { font-size: 0.75rem; color: #5a6080; margin-left: 0.8rem; }
+    .suggest-lines span { margin-right: 0.4rem; }
+    .line-expo, .line-expo-line { color: #5588dd; }
+    .line-millennium, .line-millennium-line { color: #eebb44; }
+    .line-canada, .line-canada-line { color: #44aacc; }
+    .line-seabus, .line-seabus-line { color: #aa8877; }
+    .suggest-loading { color: #5a6080; padding: 0.8rem 1rem; font-size: 0.85rem; }
+
+    /* Search input wrapper for dropdown positioning */
+    .search-input-wrap { position: relative; flex: 1; }
+
+    /* SkyTrain line colors */
+    .line-expo { color: #5588dd; }
+    .line-millennium { color: #eebb44; }
+    .line-canada { color: #44aacc; }
+    .line-seabus { color: #aa8877; }
+
     /* Time input */
     .time-row {
       display: flex; align-items: center; gap: 0.8rem; margin-top: 0.8rem;
@@ -179,12 +212,18 @@
     <div class="search-box">
       <div class="search-row">
         <span class="search-label">A</span>
-        <input type="text" class="search-input" id="fromInput" placeholder="From (e.g. Gateway Station)" autocomplete="off">
+        <div class="search-input-wrap">
+          <input type="text" class="search-input" id="fromInput" placeholder="From (e.g. Gateway Station)" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="fromSuggest" aria-expanded="false">
+          <div class="suggest" id="fromSuggest" role="listbox"></div>
+        </div>
         <button class="loc-btn" id="locBtnFrom" title="Use my location">📍</button>
       </div>
       <div class="search-row">
         <span class="search-label">B</span>
-        <input type="text" class="search-input" id="toInput" placeholder="To (e.g. YVR Airport)" autocomplete="off">
+        <div class="search-input-wrap">
+          <input type="text" class="search-input" id="toInput" placeholder="To (e.g. YVR Airport)" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="toSuggest" aria-expanded="false">
+          <div class="suggest" id="toSuggest" role="listbox"></div>
+        </div>
         <button class="loc-btn" id="locBtnTo" title="Use my location">📍</button>
       </div>
       <div class="time-row">
@@ -234,18 +273,154 @@
       }, { timeout: 5000 });
     }
 
-    // Enter key
-    document.getElementById('fromInput').addEventListener('keydown', e => {
-      if (e.key === 'Enter') document.getElementById('toInput').focus();
+    // Debounced autocomplete
+    let fromTimer = null, toTimer = null;
+    let fromSuggestions = [], toSuggestions = [];
+    let fromSelected = -1, toSelected = -1;
+
+    document.getElementById('fromInput').addEventListener('input', e => {
+      clearTimeout(fromTimer);
+      const q = e.target.value.trim();
+      if (q.length < 2) { hideSuggest('fromSuggest'); return; }
+      fromTimer = setTimeout(() => fetchSuggestions('from', q), 200);
     });
+
+    document.getElementById('toInput').addEventListener('input', e => {
+      clearTimeout(toTimer);
+      const q = e.target.value.trim();
+      if (q.length < 2) { hideSuggest('toSuggest'); return; }
+      toTimer = setTimeout(() => fetchSuggestions('to', q), 200);
+    });
+
+    // Hide suggestion dropdown when input loses focus (delayed to allow clicks)
+    document.getElementById('fromInput').addEventListener('blur', () => setTimeout(() => hideSuggest('fromSuggest'), 150));
+    document.getElementById('toInput').addEventListener('blur', () => setTimeout(() => hideSuggest('toSuggest'), 150));
+
+    async function fetchSuggestions(side, q) {
+      try {
+        const res = await fetch(`/api/transit/stations?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        if (!Array.isArray(data)) return;
+        if (side === 'from') {
+          fromSuggestions = data;
+          renderSuggestions('fromSuggest', fromSuggestions, 'from');
+        } else {
+          toSuggestions = data;
+          renderSuggestions('toSuggest', toSuggestions, 'to');
+        }
+      } catch (e) {
+        console.error('suggest error', e);
+      }
+    }
+
+    function renderSuggestions(containerId, items, side) {
+      const container = document.getElementById(containerId);
+      if (!items.length) {
+        hideSuggest(containerId);
+        return;
+      }
+      container.innerHTML = items.map((s, i) => `
+        <div class="suggest-item" data-index="${i}" role="option" tabindex="-1">
+          <span class="suggest-name">${esc(s.name)}</span>
+          <span class="suggest-lines">${s.lines.map(l => `<span class="line-${l.route_name.toLowerCase().replace(/ /g,'-')}">${esc(l.route_name)}</span>`).join(' ')}</span>
+        </div>
+      `).join('');
+      container.style.display = 'block';
+      // Reset selection
+      if (side === 'from') fromSelected = -1; else toSelected = -1;
+      // Attach click handlers
+      container.querySelectorAll('.suggest-item').forEach(el => {
+        el.addEventListener('mousedown', e => {
+          e.preventDefault(); // prevent input blur before click
+          const idx = parseInt(el.dataset.index, 10);
+          pickSuggestion(side, items[idx]);
+        });
+        el.addEventListener('mouseenter', () => {
+          container.querySelectorAll('.suggest-item').forEach(i => i.classList.remove('selected'));
+          el.classList.add('selected');
+          if (side === 'from') fromSelected = parseInt(el.dataset.index, 10);
+          else toSelected = parseInt(el.dataset.index, 10);
+        });
+      });
+    }
+
+    function hideSuggest(id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    }
+
+    function navigateSuggestions(side, delta) {
+      const suggestions = side === 'from' ? fromSuggestions : toSuggestions;
+      const containerId = side === 'from' ? 'fromSuggest' : 'toSuggest';
+      if (!suggestions.length) return;
+      const maxIndex = suggestions.length - 1;
+      let current = side === 'from' ? fromSelected : toSelected;
+      if (current < 0) current = delta > 0 ? 0 : maxIndex;
+      else current = Math.max(0, Math.min(maxIndex, current + delta));
+      if (side === 'from') fromSelected = current; else toSelected = current;
+      // Highlight
+      const container = document.getElementById(containerId);
+      container.querySelectorAll('.suggest-item').forEach((el, i) => {
+        el.classList.toggle('selected', i === current);
+      });
+      // Ensure visible (scroll)
+      const selectedEl = container.querySelector(`[data-index="${current}"]`);
+      if (selectedEl) selectedEl.scrollIntoView({ block: 'nearest' });
+    }
+
+    function getSelected(side) {
+      return side === 'from' ? fromSelected : toSelected;
+    }
+
+    function pickSuggestion(side, item) {
+      const input = document.getElementById(side + 'Input');
+      input.value = item.name;
+      hideSuggest(side + 'Suggest');
+      if (side === 'from') fromSelected = -1; else toSelected = -1;
+      if (side === 'from') document.getElementById('toInput').focus();
+    }
+
+    // Enter key — if suggestion dropdown open, pick selection; otherwise search
+    document.getElementById('fromInput').addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        navigateSuggestions('from', e.key === 'ArrowDown' ? 1 : -1);
+      } else if (e.key === 'Enter') {
+        const sel = getSelected('from');
+        if (sel >= 0) {
+          e.preventDefault();
+          pickSuggestion('from', fromSuggestions[sel]);
+        } else {
+          document.getElementById('toInput').focus();
+        }
+      } else if (e.key === 'Escape') {
+        hideSuggest('fromSuggest');
+      }
+    });
+
     document.getElementById('toInput').addEventListener('keydown', e => {
-      if (e.key === 'Enter') search();
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        navigateSuggestions('to', e.key === 'ArrowDown' ? 1 : -1);
+      } else if (e.key === 'Enter') {
+        const sel = getSelected('to');
+        if (sel >= 0) {
+          e.preventDefault();
+          pickSuggestion('to', toSuggestions[sel]);
+        } else {
+          search();
+        }
+      } else if (e.key === 'Escape') {
+        hideSuggest('toSuggest');
+      }
     });
 
     async function search() {
       const from = document.getElementById('fromInput').value.trim();
       const to = document.getElementById('toInput').value.trim();
       const depart = document.getElementById('departTime').value;
+      hideSuggest('fromSuggest');
+      hideSuggest('toSuggest');
 
       if (!from || !to) return;
 

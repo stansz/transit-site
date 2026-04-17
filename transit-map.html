@@ -105,63 +105,20 @@
 
       const bounds = L.latLngBounds();
 
+      // Just add bounds without any drawing
       route.steps.forEach(step => {
         try {
-        if (step.type === 'transfer') {
-          // Transfer marker: blue circle
           if (step.from_lat && step.from_lon) {
-            L.circleMarker([step.from_lat, step.from_lon], {
-              radius: 6, color: '#44aacc', fillOpacity: 0.8, fillColor: '#44aacc'
-            }).addTo(map);
             bounds.extend([step.from_lat, step.from_lon]);
-          }
-        } else if (step.type === 'skytrain' || step.type === 'bus') {
-          const color = LINE_COLORS[step.route] || '#888888';
-          const isBus = step.type === 'bus';
-
-          // Draw polyline from shape (if available) or just from→to
-          if (step.shape && step.shape.length > 1) {
-            const latlngs = step.shape.map(([lat, lon]) => [lat, lon]);
-            const line = L.polyline(latlngs, {
-              color: color,
-              weight: isBus ? 3 : 5,
-              opacity: 0.7,
-              dashArray: isBus ? '5, 8' : null,
-            });
-            line.addTo(map);
-            latlngs.forEach(p => bounds.extend(p));
-          } else if (step.from_lat && step.to_lat) {
-            // Fallback: straight line
-            const line = L.polyline([[step.from_lat, step.from_lon], [step.to_lat, step.to_lon]], {
-              color: color,
-              weight: isBus ? 3 : 5,
-              opacity: 0.7,
-              dashArray: isBus ? '5, 8' : null,
-            });
-            line.addTo(map);
-            bounds.extend([step.from_lat, step.from_lon]);
-            bounds.extend([step.to_lat, step.to_lon]);
-          }
-
-          // Origin marker (green) and destination marker (red)
-          if (step.from_lat && step.from_lon) {
-            const marker = L.circleMarker([step.from_lat, step.from_lon], {
-              radius: 6, color: '#4caf50', fillOpacity: 0.9, fillColor: '#4caf50'
-            });
-            marker.addTo(map);
           }
           if (step.to_lat && step.to_lon) {
-            const marker = L.circleMarker([step.to_lat, step.to_lon], {
-              radius: 6, color: '#f44336', fillOpacity: 0.9, fillColor: '#f44336'
-            });
-            marker.addTo(map);
+            bounds.extend([step.to_lat, step.to_lon]);
           }
-        }
-        } catch(e) {
-          console.log('Step rendering error:', e.message);
-        }
+        } catch(e) {}
       });
 
+      console.log('Bounds:', bounds);
+      
       // Fit bounds if we have them
       try {
         if (bounds && bounds.isValid()) {
@@ -170,6 +127,8 @@
       } catch (e) {
         console.log('fitBounds error:', e);
       }
+      
+      console.log('Render complete!');
       } catch (e) {
         console.log('renderRoute internal error:', e);
         document.getElementById('loading').textContent = 'Render error: ' + e.message;

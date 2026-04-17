@@ -47,6 +47,12 @@
       'SeaBus': '#aa8877',
     };
 
+    // Global error handler to catch Leaflet errors
+    window.onerror = function(msg, url, line, col, error) {
+      console.log('Global error:', msg, 'line:', line);
+      return false;
+    };
+
     async function main() {
       const params = new URLSearchParams(window.location.search);
       const from = params.get('from')?.trim();

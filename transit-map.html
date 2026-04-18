@@ -26,7 +26,10 @@
     .back-btn:hover { background: #252845; }
     .loading {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-      font-size: 1.2rem; color: #5a6080; z-index: 999;
+      font-size: 1rem; color: #6a7090; z-index: 999;
+      background: rgba(10,22,40,0.9); padding: 1rem 1.5rem; border-radius: 10px;
+      backdrop-filter: blur(8px); border: 1px solid #2a2d40;
+      transition: opacity 0.3s;
     }
   </style>
 </head>
@@ -111,7 +114,9 @@
       console.log('renderRoute called');
       
       if (!route.steps || route.steps.length === 0) {
-        document.getElementById('loading').textContent = 'No steps';
+        const ld = document.getElementById('loading');
+        ld.textContent = 'No route found';
+        ld.style.display = 'block';
         return;
       }
 

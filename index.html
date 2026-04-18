@@ -91,6 +91,7 @@
     .line-millennium, .line-millennium-line { color: #eebb44; }
     .line-canada, .line-canada-line { color: #44aacc; }
     .line-seabus, .line-seabus-line { color: #aa8877; }
+    .line-bus { color: #99aa66; }
     .suggest-loading { color: #5a6080; padding: 0.8rem 1rem; font-size: 0.85rem; }
 
     /* Search input wrapper for dropdown positioning */
@@ -207,6 +208,8 @@
       <button class="quick-btn" data-from="Gateway Station" data-to="YVR Airport">→ YVR Airport</button>
       <button class="quick-btn" data-from="Metrotown" data-to="Commercial-Broadway">Metrotown → Commercial</button>
       <button class="quick-btn" data-from="Brentwood" data-to="Waterfront">Brentwood → Downtown</button>
+      <button class="quick-btn" data-from="Broadway-City Hall Station" data-to="UBC Exchange">→ UBC (99)</button>
+      <button class="quick-btn" data-from="Lougheed Station" data-to="Coquitlam Central">Lougheed → Coquitlam</button>
     </div>
 
     <div class="search-box">
@@ -237,7 +240,7 @@
     <div class="map-link" id="mapLink" style="display:none; margin-top:1rem; text-align:center;">
       <button class="search-btn" onclick="openMap()">View Route on Map 🗺️</button>
     </div>
-    <div class="hint">Powered by TransLink GTFS data · Schedules may vary</div>
+    <div class="hint">SkyTrain · Bus · SeaBus · Powered by TransLink GTFS data</div>
   </div>
 
   <script>
@@ -249,6 +252,14 @@
       'Canada Line': 'line-canada',
       'SeaBus': 'line-seabus',
     };
+
+    function lineClass(routeName) {
+      // SkyTrain lines
+      if (LINE_COLORS[routeName]) return LINE_COLORS[routeName];
+      // Bus routes get a generic bus style
+      if (routeName.startsWith('Bus ')) return 'line-bus';
+      return '';
+    }
 
     // Quick route buttons
     document.querySelectorAll('.quick-btn').forEach(btn => {
@@ -325,7 +336,7 @@
       container.innerHTML = items.map((s, i) => `
         <div class="suggest-item" data-index="${i}" role="option" tabindex="-1">
           <span class="suggest-name">${esc(s.name)}</span>
-          <span class="suggest-lines">${s.lines.map(l => `<span class="line-${l.route_name.toLowerCase().replace(/ /g,'-')}">${esc(l.route_name)}</span>`).join(' ')}</span>
+          <span class="suggest-lines">${s.lines.map(l => `<span class="${lineClass(l.route_name)}">${esc(l.route_name)}</span>`).join(' ')}</span>
         </div>
       `).join('');
       container.style.display = 'block';
@@ -481,13 +492,13 @@
         }
 
         const icon = step.type === 'skytrain' ? '🚆' : '🚌';
-        const lineClass = LINE_COLORS[step.route] || '';
+        const lineCl = LINE_COLORS[step.route] || (step.route.match && step.route.match(/^\d/) ? 'line-bus' : '');
         const stops = step.stops_count > 1 ? `${step.stops_count} stops` : '1 stop';
 
         return `<div class="step">
           <span class="step-icon">${icon}</span>
           <div class="step-line"></div>
-          <div class="step-route ${lineClass}">${esc(step.route)}</div>
+          <div class="step-route ${lineCl}">${esc(step.route)}</div>
           <div class="step-detail">${esc(step.from_stop)} → ${esc(step.to_stop)}</div>
           <div class="step-time">${step.from_time} → ${step.to_time} · ${stops}</div>
         </div>`;

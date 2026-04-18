@@ -92,6 +92,9 @@
     .line-canada, .line-canada-line { color: #44aacc; }
     .line-seabus, .line-seabus-line { color: #aa8877; }
     .line-bus { color: #99aa66; }
+    .suggest-item .suggest-tag { font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 8px; margin-left: 0.5rem; }
+    .suggest-tag.tag-stop { background: #1e2840; color: #5a7ab0; }
+    .suggest-tag.tag-address { background: #1e3820; color: #5aa060; }
     .suggest-loading { color: #5a6080; padding: 0.8rem 1rem; font-size: 0.85rem; }
 
     /* Search input wrapper for dropdown positioning */
@@ -336,7 +339,7 @@
       container.innerHTML = items.map((s, i) => `
         <div class="suggest-item" data-index="${i}" role="option" tabindex="-1">
           <span class="suggest-name">${esc(s.name)}</span>
-          <span class="suggest-lines">${s.lines.map(l => `<span class="${lineClass(l.route_name)}">${esc(l.route_name)}</span>`).join(' ')}</span>
+          <span class="suggest-lines">${s.lines.length > 0 ? s.lines.map(l => `<span class="${lineClass(l.route_name)}">${esc(l.route_name)}</span>`).join(' ') : ''}</span>${s.type === 'address' ? '<span class="suggest-tag tag-address">📍 address</span>' : ''}
         </div>
       `).join('');
       container.style.display = 'block';

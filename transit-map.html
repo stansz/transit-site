@@ -31,7 +31,7 @@
   </style>
 </head>
 <body>
-  <button class="back-btn" onclick="history.back()">← Back to Search</button>
+  <button class="back-btn" id="backBtn">← Back to Search</button>
   <div id="map"></div>
   <div class="loading" id="loading">Loading route...</div>
 
@@ -52,6 +52,27 @@
       console.log('Global error:', msg, 'line:', line);
       return false;
     };
+
+    // Back button — close tab if opened via window.open, otherwise go back
+    document.getElementById('backBtn').addEventListener('click', () => {
+      if (window.opener) {
+        window.close();
+      } else {
+        history.back();
+        // If history.back doesn't navigate (same origin issue), fallback to index
+        setTimeout(() => {
+          if (document.visibilityState === 'visible') {
+            const params = new URLSearchParams(window.location.search);
+            const from = params.get('from') || '';
+            const to = params.get('to') || '';
+            const depart = params.get('depart') || '';
+            let url = 'index.html?from=' + encodeURIComponent(from) + '&to=' + encodeURIComponent(to);
+            if (depart) url += '&depart=' + encodeURIComponent(depart);
+            window.location.href = url;
+          }
+        }, 300);
+      }
+    });
 
     async function main() {
       const params = new URLSearchParams(window.location.search);

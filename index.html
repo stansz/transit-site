@@ -403,7 +403,7 @@
       const depart = document.getElementById('departTime').value;
       let url = `transit-map.html?from=${from}&to=${to}`;
       if (depart) url += `&depart=${encodeURIComponent(depart)}`;
-      window.open(url, '_blank');
+      window.location.href = url;
     }
 
     // Enter key — if suggestion dropdown open, pick selection; otherwise search

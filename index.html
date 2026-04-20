@@ -219,7 +219,7 @@
       <div class="search-row">
         <span class="search-label">A</span>
         <div class="search-input-wrap">
-          <input type="text" class="search-input" id="fromInput" placeholder="From (e.g. Gateway Station)" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="fromSuggest" aria-expanded="false">
+          <input type="text" class="search-input" id="fromInput" placeholder="From (stop or address)" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="fromSuggest" aria-expanded="false">
           <div class="suggest" id="fromSuggest" role="listbox"></div>
         </div>
         <button class="loc-btn" id="locBtnFrom" title="Use my location">📍</button>
@@ -227,7 +227,7 @@
       <div class="search-row">
         <span class="search-label">B</span>
         <div class="search-input-wrap">
-          <input type="text" class="search-input" id="toInput" placeholder="To (e.g. YVR Airport)" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="toSuggest" aria-expanded="false">
+          <input type="text" class="search-input" id="toInput" placeholder="To (stop or address)" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="toSuggest" aria-expanded="false">
           <div class="suggest" id="toSuggest" role="listbox"></div>
         </div>
         <button class="loc-btn" id="locBtnTo" title="Use my location">📍</button>
@@ -315,14 +315,31 @@
 
     async function fetchSuggestions(side, q) {
       try {
-        const res = await fetch(`https://maps.ogsapps.cc/api/transit/stations?q=${encodeURIComponent(q)}`);
-        const data = await res.json();
-        if (!Array.isArray(data)) return;
+        // Fetch both stops and address geocodes in parallel
+        const [stopRes, geoRes] = await Promise.allSettled([
+          fetch(`https://maps.ogsapps.cc/api/transit/stations?q=${encodeURIComponent(q)}`).then(r => r.json()),
+          fetch(`https://maps.ogsapps.cc/api/geocode?q=${encodeURIComponent(q)}`).then(r => r.json()).catch(() => [])
+        ]);
+
+        const stops = Array.isArray(stopRes.value) ? stopRes.value : [];
+        let geocodes = [];
+        if (geoRes.status === 'fulfilled' && Array.isArray(geoRes.value)) {
+          geocodes = geoRes.value.slice(0, 3).map(g => ({
+            name: g.display_name || g.name || g.address || q,
+            lines: [],
+            type: 'address'
+          }));
+        }
+
+        // Merge: stops first, then address results (skip duplicates)
+        const stopNames = new Set(stops.map(s => s.name.toLowerCase()));
+        const merged = [...stops, ...geocodes.filter(g => !stopNames.has(g.name.toLowerCase()))];
+
         if (side === 'from') {
-          fromSuggestions = data;
+          fromSuggestions = merged;
           renderSuggestions('fromSuggest', fromSuggestions, 'from');
         } else {
-          toSuggestions = data;
+          toSuggestions = merged;
           renderSuggestions('toSuggest', toSuggestions, 'to');
         }
       } catch (e) {
@@ -339,7 +356,7 @@
       container.innerHTML = items.map((s, i) => `
         <div class="suggest-item" data-index="${i}" role="option" tabindex="-1">
           <span class="suggest-name">${esc(s.name)}</span>
-          <span class="suggest-lines">${s.lines.length > 0 ? s.lines.map(l => `<span class="${lineClass(l.route_name)}">${esc(l.route_name)}</span>`).join(' ') : ''}</span>${s.type === 'address' ? '<span class="suggest-tag tag-address">📍 address</span>' : ''}
+          <span class="suggest-lines">${s.lines.length > 0 ? s.lines.map(l => `<span class="${lineClass(l.route_name)}">${esc(l.route_name)}</span>`).join(' ') : ''}</span>${s.type === 'address' ? '<span class="suggest-tag tag-address">📍 address</span>' : '<span class="suggest-tag tag-stop">🚉 stop</span>'}
         </div>
       `).join('');
       container.style.display = 'block';
